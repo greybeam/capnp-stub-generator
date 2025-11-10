@@ -227,7 +227,7 @@ class Writer:
 
             self.generate_nested(last_element)
             list_depth = len(nested_schema_elements)
-            new_type = self.get_type_by_id(last_element.node.id)
+            new_type = self.get_type_by_id_or_raise(last_element.node.id)
             type_name = new_type.scoped_name
 
         except (AttributeError, IndexError):
@@ -780,7 +780,16 @@ class Writer:
         """
         return type_id in self.type_map
 
-    def get_type_by_id(self, type_id: int) -> CapnpType:
+
+    def get_type_by_id_or_raise(self, type_id: int) -> CapnpType:
+        res = self.get_type_by_id(type_id)
+
+        if res is None:
+            raise KeyError(f"Failed to get type for id: {type_id}")
+
+        return res
+
+    def get_type_by_id(self, type_id: int) -> CapnpType | None:
         """Look up a type in the type registry, by means of its ID.
 
         Args:
@@ -793,10 +802,9 @@ class Writer:
             Type: The type, if it exists.
         """
         if self.is_type_id_known(type_id):
-            return self.type_map[type_id]
-
+            return self.type_map.get(type_id)
         else:
-            raise KeyError(f"The type ID '{type_id} was not found in the type registry.'")
+            return None
 
     def new_scope(self, name: str, node: Any, scope_heading: str = "", register: bool = True) -> Scope:
         """Creates a new scope below the scope of the provided node.
@@ -862,7 +870,7 @@ class Writer:
         element_type: Any | None = None
 
         if type_reader_type == capnp_types.CapnpElementType.STRUCT:
-            element_type = self.get_type_by_id(type_reader.struct.typeId)
+            element_type = self.get_type_by_id_or_raise(type_reader.struct.typeId)
             type_name = element_type.name
             generic_params = []
 
@@ -870,7 +878,7 @@ class Writer:
                 brand_scope_type = brand_scope.which()
 
                 if brand_scope_type == "inherit":
-                    parent_scope = self.get_type_by_id(brand_scope.scopeId)
+                    parent_scope = self.get_type_by_id_or_raise(brand_scope.scopeId)
                     generic_params.extend(parent_scope.generic_params)
 
                 elif brand_scope_type == "bind":
@@ -884,7 +892,7 @@ class Writer:
                 type_name += f"[{', '.join(generic_params)}]"
 
         elif type_reader_type == capnp_types.CapnpElementType.ENUM:
-            element_type = self.get_type_by_id(type_reader.enum.typeId)
+            element_type = self.get_type_by_id_or_raise(type_reader.enum.typeId)
             type_name = element_type.name
 
         elif type_reader_type == capnp_types.CapnpElementType.LIST:
