@@ -3,6 +3,9 @@
 Generates Python stubs files from cap'n proto schemas.
 Useful for IDE auto-completion and static type checking.
 
+## Fork of a fork
+This fork is a big hammer to slam nails down and make good enough generated stubs ignoring build errors, we may attempt to upstream the "fixes" made here but it is unlikely.
+
 ## Usage
 
 Clone and install with pip:
