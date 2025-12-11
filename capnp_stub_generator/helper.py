@@ -22,14 +22,7 @@ def new_builder(type_name: str) -> str:
     Returns:
         str: The builder variant.
     """
-
-    # Shim for generic type support
-    vals = type_name.split("[", 1)
-
-    if len(vals) == 1:
-        return f"{type_name}{BUILDER_NAME}"
-    else:
-        return f"{vals[0]}{BUILDER_NAME}[{vals[1]}"
+    return f"{type_name}{BUILDER_NAME}"
 
 
 def new_reader(type_name: str) -> str:
@@ -43,14 +36,7 @@ def new_reader(type_name: str) -> str:
     Returns:
         str: The reader variant.
     """
-
-    # Shim for generic type support
-    vals = type_name.split("[", 1)
-
-    if len(vals) == 1:
-        return f"{type_name}{READER_NAME}"
-    else:
-        return f"{vals[0]}{READER_NAME}[{vals[1]}"
+    return f"{type_name}{READER_NAME}"
 
 
 @dataclass
@@ -62,16 +48,28 @@ class TypeHint:
     affix: str = ""
     primary: bool = False
 
+    def _generic_name(self) -> str:
+        """
+        Returns name+affix in a way that doesn't break generics rendering
+        """
+        parts = self.name.split("[", 1)
+
+        if len(parts) == 1:
+            return f"{self.name}{self.affix}"
+        else:
+            (ty, generic) = parts
+            return f"{ty}{self.affix}[{generic}"
+
     def __str__(self) -> str:
         """The string representation of the type hint.
 
         This is composed of the scopes (if any), the name of the hint, and the affix (if any).
         """
         if not self.scopes:
-            return f"{self.name}{self.affix}"
+            return self._generic_name()
 
         else:
-            return f"{'.'.join(self.scopes)}.{self.name}{self.affix}"
+            return f"{'.'.join(self.scopes)}.{self._generic_name()}"
 
 
 @dataclass
