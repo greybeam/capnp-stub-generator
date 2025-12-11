@@ -1,4 +1,5 @@
 """Helper functionality that is used in other modules of this package."""
+
 from __future__ import annotations
 
 from copy import copy
@@ -21,7 +22,14 @@ def new_builder(type_name: str) -> str:
     Returns:
         str: The builder variant.
     """
-    return f"{type_name}{BUILDER_NAME}"
+
+    # Shim for generic type support
+    vals = type_name.split("[", 1)
+
+    if len(vals) == 1:
+        return f"{type_name}{BUILDER_NAME}"
+    else:
+        return f"{vals[0]}{BUILDER_NAME}[{vals[1]}"
 
 
 def new_reader(type_name: str) -> str:
@@ -35,7 +43,14 @@ def new_reader(type_name: str) -> str:
     Returns:
         str: The reader variant.
     """
-    return f"{type_name}{READER_NAME}"
+
+    # Shim for generic type support
+    vals = type_name.split("[", 1)
+
+    if len(vals) == 1:
+        return f"{type_name}{READER_NAME}"
+    else:
+        return f"{vals[0]}{READER_NAME}[{vals[1]}"
 
 
 @dataclass
@@ -77,7 +92,9 @@ class TypeHintedVariable:
                 primary_type_hint_count += 1
 
         if primary_type_hint_count > 1:
-            raise ValueError(f"There can only be exactly one primary type hint. Found {primary_type_hint_count}")
+            raise ValueError(
+                f"There can only be exactly one primary type hint. Found {primary_type_hint_count}"
+            )
 
     def __str__(self) -> str:
         """String representation of this object.
@@ -89,7 +106,7 @@ class TypeHintedVariable:
 
     def _nest(self, unnested_type_name: str) -> str:
         if self.nesting_depth > 0:
-            return f'{self.nesting_depth * "Sequence["}{unnested_type_name}{self.nesting_depth * "]"}'
+            return f"{self.nesting_depth * 'Sequence['}{unnested_type_name}{self.nesting_depth * ']'}"
 
         else:
             return unnested_type_name
@@ -229,7 +246,13 @@ class TypeHintedVariable:
 
     def add_builder_from_primary_type(self):
         """Add a type hint with builder affix, based on the primary type."""
-        self.add_type_hint(TypeHint(self.primary_type_hint.name, copy(self.primary_type_hint.scopes), BUILDER_NAME))
+        self.add_type_hint(
+            TypeHint(
+                self.primary_type_hint.name,
+                copy(self.primary_type_hint.scopes),
+                BUILDER_NAME,
+            )
+        )
 
     def add_reader_from_primary_type(self):
         """Add a type hint with builder affix, based on the primary type."""
@@ -323,7 +346,9 @@ def new_type_group(name: str, types: list[str]) -> str:
 
 
 def new_function(
-    name: str, parameters: list[TypeHintedVariable] | list[str] | None = None, return_type: str | None = None
+    name: str,
+    parameters: list[TypeHintedVariable] | list[str] | None = None,
+    return_type: str | None = None,
 ) -> str:
     """Create a string for a function.
 
@@ -342,7 +367,9 @@ def new_function(
     return f"def {name}({arguments}) -> {return_type}: ..."
 
 
-def new_decorator(name: str, parameters: list[TypeHintedVariable] | list[str] | None = None) -> str:
+def new_decorator(
+    name: str, parameters: list[TypeHintedVariable] | list[str] | None = None
+) -> str:
     """Create a new decorator.
 
     Args:
